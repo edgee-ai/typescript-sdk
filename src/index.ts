@@ -174,7 +174,18 @@ export class SendResponse {
 export interface StreamDelta {
   role?: string;
   content?: string;
-  tool_calls?: ToolCall[];
+  tool_calls?: StreamToolCallDelta[];
+}
+
+// Tool call delta (partial tool call in stream)
+export interface StreamToolCallDelta {
+  index: number;
+  id?: string;
+  type?: "function";
+  function?: {
+    name?: string;
+    arguments?: string;
+  };
 }
 
 export interface StreamChoice {
@@ -210,7 +221,36 @@ export class StreamChunk {
     }
     return null;
   }
+
+  get toolCallDeltas(): StreamToolCallDelta[] | null {
+    return this.choices[0]?.delta?.tool_calls ?? null;
+  }
 }
+
+// Stream events for tool-enabled streaming
+export type StreamEvent =
+  | { type: "chunk"; chunk: StreamChunk }
+  | { type: "tool_start"; toolCall: ToolCall }
+  | { type: "tool_result"; toolCallId: string; toolName: string; result: unknown }
+  | { type: "iteration_complete"; iteration: number };
+
+// Simple stream options (auto-handled tools)
+export interface SimpleStreamOptions {
+  model: string;
+  input: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  tools?: Tool<any>[];
+  maxToolIterations?: number;
+}
+
+// Advanced stream options (manual control)
+export interface AdvancedStreamOptions {
+  model: string;
+  input: InputObject;
+}
+
+// Union type for stream options
+export type StreamOptions = SimpleStreamOptions | AdvancedStreamOptions;
 
 export interface EdgeeConfig {
   apiKey?: string;
@@ -288,8 +328,10 @@ export default class Edgee {
           totalUsage.prompt_tokens += response.usage.prompt_tokens;
           totalUsage.completion_tokens += response.usage.completion_tokens;
           totalUsage.total_tokens += response.usage.total_tokens;
-          totalUsage.input_tokens_details.cached_tokens += response.usage.input_tokens_details.cached_tokens;
-          totalUsage.output_tokens_details.reasoning_tokens += response.usage.output_tokens_details.reasoning_tokens;
+          totalUsage.input_tokens_details.cached_tokens +=
+            response.usage.input_tokens_details.cached_tokens;
+          totalUsage.output_tokens_details.reasoning_tokens +=
+            response.usage.output_tokens_details.reasoning_tokens;
         }
       }
 
@@ -438,7 +480,60 @@ export default class Edgee {
     }
   }
 
+  /**
+   * Stream a response from the API.
+   * 
+   * Simple mode (string input): Optionally pass tools for auto-execution.
+   * Advanced mode (InputObject): Manual tool handling.
+   * 
+   * @example Simple streaming without tools
+   * ```ts
+   * for await (const chunk of client.stream("gpt-4o", "Hello!")) {
+   *   process.stdout.write(chunk.text ?? "");
+   * }
+   * ```
+   * 
+   * @example Simple streaming with auto-executed tools
+   * ```ts
+   * for await (const event of client.stream({
+   *   model: "gpt-4o",
+   *   input: "What's the weather in Paris?",
+   *   tools: [weatherTool],
+   * })) {
+   *   if (event.type === "chunk") {
+   *     process.stdout.write(event.chunk.text ?? "");
+   *   } else if (event.type === "tool_result") {
+   *     console.log(`Tool ${event.toolName}: ${JSON.stringify(event.result)}`);
+   *   }
+   * }
+   * ```
+   */
+  stream(model: string, input: string): AsyncGenerator<StreamChunk>;
+  stream(model: string, input: InputObject): AsyncGenerator<StreamChunk>;
+  stream(options: SimpleStreamOptions): AsyncGenerator<StreamEvent>;
+  stream(options: AdvancedStreamOptions): AsyncGenerator<StreamChunk>;
   async *stream(
+    modelOrOptions: string | StreamOptions,
+    input?: string | InputObject
+  ): AsyncGenerator<StreamChunk | StreamEvent> {
+    // Overload 1 & 2: stream(model, input) - backward compatible
+    if (typeof modelOrOptions === "string") {
+      yield* this._streamAdvanced(modelOrOptions, input!);
+      return;
+    }
+
+    // Overload 3 & 4: stream(options)
+    const options = modelOrOptions;
+    if (typeof options.input === "string") {
+      // Simple mode with tools
+      yield* this._streamSimple(options as SimpleStreamOptions);
+    } else {
+      // Advanced mode
+      yield* this._streamAdvanced(options.model, options.input);
+    }
+  }
+
+  private async *_streamAdvanced(
     model: string,
     input: string | InputObject
   ): AsyncGenerator<StreamChunk> {
@@ -460,6 +555,148 @@ export default class Edgee {
       `${this.baseUrl}/v1/chat/completions`,
       body
     );
+  }
+
+  private async *_streamSimple(
+    options: SimpleStreamOptions
+  ): AsyncGenerator<StreamEvent> {
+    const { model, input, tools, maxToolIterations = 10 } = options;
+
+    // Build initial messages
+    const messages: Message[] = [{ role: "user", content: input }];
+
+    // Convert Tool instances to JSON format
+    const openAiTools: OpenAITool[] | undefined = tools?.map((tool) =>
+      tool.toJSON()
+    );
+
+    // Create a map for quick tool lookup by name
+    const toolMap = new Map<string, Tool>(
+      tools?.map((tool) => [tool.name, tool])
+    );
+
+    let iterations = 0;
+
+    // The agentic loop
+    while (iterations < maxToolIterations) {
+      iterations++;
+
+      // Accumulate the full response from stream
+      let role: string | undefined;
+      let content = "";
+      const toolCallsAccumulator: Map<number, ToolCall> = new Map();
+
+      // Stream the response
+      const body: Record<string, unknown> = {
+        model,
+        messages,
+        stream: true,
+      };
+      if (openAiTools) body.tools = openAiTools;
+
+      for await (const chunk of this._handleStreamingResponse(
+        `${this.baseUrl}/v1/chat/completions`,
+        body
+      )) {
+        // Yield the chunk as an event
+        yield { type: "chunk", chunk };
+
+        // Accumulate role
+        if (chunk.role) {
+          role = chunk.role;
+        }
+
+        // Accumulate content
+        if (chunk.text) {
+          content += chunk.text;
+        }
+
+        // Accumulate tool calls from deltas
+        const toolCallDeltas = chunk.toolCallDeltas;
+        if (toolCallDeltas) {
+          for (const delta of toolCallDeltas) {
+            const existing = toolCallsAccumulator.get(delta.index);
+            if (existing) {
+              // Append to existing tool call
+              if (delta.function?.arguments) {
+                existing.function.arguments += delta.function.arguments;
+              }
+            } else {
+              // Start new tool call
+              toolCallsAccumulator.set(delta.index, {
+                id: delta.id || "",
+                type: "function",
+                function: {
+                  name: delta.function?.name || "",
+                  arguments: delta.function?.arguments || "",
+                },
+              });
+            }
+          }
+        }
+      }
+
+      // Convert accumulated tool calls to array
+      const toolCalls = Array.from(toolCallsAccumulator.values());
+
+      // No tool calls? We're done
+      if (toolCalls.length === 0) {
+        return;
+      }
+
+      // Add assistant's response (with tool_calls) to messages
+      messages.push({
+        role: (role as Message["role"]) || "assistant",
+        content: content || undefined,
+        tool_calls: toolCalls,
+      });
+
+      // Execute each tool call and add results
+      for (const toolCall of toolCalls) {
+        const toolName = toolCall.function.name;
+        const tool = toolMap.get(toolName);
+
+        // Yield tool_start event
+        yield { type: "tool_start", toolCall };
+
+        let result: unknown;
+        if (tool) {
+          try {
+            // Parse arguments and execute with validation
+            const rawArgs = JSON.parse(toolCall.function.arguments);
+            result = await tool.execute(rawArgs);
+          } catch (err) {
+            if (err instanceof z.ZodError) {
+              result = { error: `Invalid arguments: ${err.message}` };
+            } else if (err instanceof Error) {
+              result = { error: `Tool execution failed: ${err.message}` };
+            } else {
+              result = { error: "Tool execution failed" };
+            }
+          }
+        } else {
+          result = { error: `Unknown tool: ${toolName}` };
+        }
+
+        // Yield tool_result event
+        yield { type: "tool_result", toolCallId: toolCall.id, toolName, result };
+
+        // Add tool result to messages
+        messages.push({
+          role: "tool",
+          tool_call_id: toolCall.id,
+          content: typeof result === "string" ? result : JSON.stringify(result),
+        });
+      }
+
+      // Yield iteration complete event
+      yield { type: "iteration_complete", iteration: iterations };
+
+      // Loop continues - model will process tool results
+    }
+
+    // Max iterations reached - throw error
+    throw new Error(`Max tool iterations (${maxToolIterations}) reached`);
   }
 
   private async callApi(

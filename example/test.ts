@@ -1,11 +1,11 @@
-import Edgee, { Tool, z } from "edgee";
+import Edgee, { StreamEvent, Tool, z } from "edgee";
 
-const edgee = new Edgee(process.env.EDGEE_API_KEY || "test-key");
+const edgee = new Edgee(process.env.EDGEE_API_KEY || "api_key");
 
 // Test 1: Simple string input
 console.log("Test 1: Simple string input");
 const response1 = await edgee.send({
-  model: "gpt-4o",
+  model: "devstral2",
   input: "What is the capital of France?",
 });
 console.log("Content:", response1.choices[0].message.content);
@@ -15,7 +15,7 @@ console.log();
 // Test 2: Full input object with messages
 console.log("Test 2: Full input object with messages");
 const response2 = await edgee.send({
-  model: "gpt-4o",
+  model: "devstral2",
   input: {
     messages: [
       { role: "system", content: "You are a helpful assistant." },
@@ -29,7 +29,7 @@ console.log();
 // Test 3: Advanced mode - Manual tool handling
 console.log("Test 3: Advanced mode - Manual tool handling");
 const response3 = await edgee.send({
-  model: "gpt-4o",
+  model: "devstral2",
   input: {
     messages: [{ role: "user", content: "What is the weather in Paris?" }],
     tools: [
@@ -91,7 +91,7 @@ const weatherTool = new Tool({
 });
 
 const response4 = await edgee.send({
-  model: "gpt-4o",
+  model: "devstral2",
   input: "What's the weather like in Paris?",
   tools: [weatherTool],
 });
@@ -128,10 +128,42 @@ const calculatorTool = new Tool({
 });
 
 const response5 = await edgee.send({
-  model: "gpt-4o",
+  model: "devstral2",
   input: "What's 25 multiplied by 4, and then what's the weather in London?",
   tools: [weatherTool, calculatorTool],
 });
 console.log("Content:", response5.choices[0].message.content);
 console.log("Total usage:", response5.usage);
 console.log();
+
+// Test 6: Simple streaming without tools
+console.log("Test 6: Simple streaming without tools");
+process.stdout.write("Response: ");
+for await (const chunk of edgee.stream("devstral2", "Say hello in 10 words!")) {
+  process.stdout.write(chunk.text ?? "");
+}
+console.log("\n");
+
+// Test 7: Streaming with automatic tool execution
+console.log("Test 7: Streaming with automatic tool execution");
+process.stdout.write("Response: ");
+const streamWithTools: AsyncGenerator<StreamEvent> = edgee.stream({
+  model: "devstral2",
+  input: "What's 15 multiplied by 7, and what's the weather in Paris?",
+  tools: [weatherTool, calculatorTool],
+});
+for await (const event of streamWithTools) {
+  if (event.type === "chunk") {
+    process.stdout.write(event.chunk.text ?? "");
+  } else if (event.type === "tool_start") {
+    console.log(`\n  [Tool starting: ${event.toolCall.function.name}]`);
+  } else if (event.type === "tool_result") {
+    console.log(
+      `  [Tool result: ${event.toolName} -> ${JSON.stringify(event.result)}]`
+    );
+    process.stdout.write("Response: ");
+  } else if (event.type === "iteration_complete") {
+    console.log(`  [Iteration ${event.iteration} complete, continuing...]`);
+  }
+}
+console.log("\n");
