@@ -42,6 +42,7 @@ export interface InputObject {
   messages: Message[];
   tools?: Tool[];
   tool_choice?: ToolChoice;
+  tags?: string[];
 }
 
 export interface SendOptions {
@@ -185,6 +186,7 @@ export default class Edgee {
     if (typeof input !== "string") {
       if (input.tools) body.tools = input.tools;
       if (input.tool_choice) body.tool_choice = input.tool_choice;
+      if (input.tags) body.tags = input.tags;
     }
 
     const res = await fetch(`${this.baseUrl}/v1/chat/completions`, {
@@ -285,6 +287,7 @@ export default class Edgee {
     if (typeof input !== "string") {
       if (input.tools) body.tools = input.tools;
       if (input.tool_choice) body.tool_choice = input.tool_choice;
+      if (input.tags) body.tags = input.tags;
     }
 
     yield* this._handleStreamingResponse(
