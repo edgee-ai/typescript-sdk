@@ -491,6 +491,73 @@ describe('Edgee', () => {
       );
     });
 
+    it('should handle response with compression field', async () => {
+      const mockResponse: SendResponse = {
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: 'assistant',
+              content: 'Response',
+            },
+            finish_reason: 'stop',
+          },
+        ],
+        usage: {
+          prompt_tokens: 100,
+          completion_tokens: 50,
+          total_tokens: 150,
+        },
+        compression: {
+          input_tokens: 100,
+          saved_tokens: 42,
+          rate: 0.6102003642987249,
+        },
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      });
+
+      const result = await client.send({
+        model: 'gpt-4',
+        input: 'Test',
+      });
+
+      expect(result.compression).toBeDefined();
+      expect(result.compression?.input_tokens).toBe(100);
+      expect(result.compression?.saved_tokens).toBe(42);
+      expect(result.compression?.rate).toBe(0.6102003642987249);
+    });
+
+    it('should handle response without compression field', async () => {
+      const mockResponse: SendResponse = {
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: 'assistant',
+              content: 'Response',
+            },
+            finish_reason: 'stop',
+          },
+        ],
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      });
+
+      const result = await client.send({
+        model: 'gpt-4',
+        input: 'Test',
+      });
+
+      expect(result.compression).toBeUndefined();
+    });
+
     it('should throw error when API returns non-OK status', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
