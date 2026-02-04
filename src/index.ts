@@ -43,6 +43,8 @@ export interface InputObject {
   tools?: Tool[];
   tool_choice?: ToolChoice;
   tags?: string[];
+  enable_compression?: boolean; // Enable token compression (gateway-internal, not sent to providers)
+  compression_rate?: number; // Compression rate 0.0-1.0 (gateway-internal, not sent to providers)
 }
 
 export interface SendOptions {
@@ -67,6 +69,11 @@ export class SendResponse {
     completion_tokens: number;
     total_tokens: number;
   };
+  compression?: {
+    input_tokens: number;
+    saved_tokens: number;
+    rate: number;
+  };
 
   constructor(
     choices: Choice[],
@@ -74,10 +81,16 @@ export class SendResponse {
       prompt_tokens: number;
       completion_tokens: number;
       total_tokens: number;
+    },
+    compression?: {
+      input_tokens: number;
+      saved_tokens: number;
+      rate: number;
     }
   ) {
     this.choices = choices;
     this.usage = usage;
+    this.compression = compression;
   }
 
   get text(): string | null {
@@ -187,6 +200,8 @@ export default class Edgee {
       if (input.tools) body.tools = input.tools;
       if (input.tool_choice) body.tool_choice = input.tool_choice;
       if (input.tags) body.tags = input.tags;
+      if (input.enable_compression !== undefined) body.enable_compression = input.enable_compression;
+      if (input.compression_rate !== undefined) body.compression_rate = input.compression_rate;
     }
 
     const res = await fetch(`${this.baseUrl}/v1/chat/completions`, {
@@ -209,10 +224,15 @@ export default class Edgee {
         prompt_tokens: number;
         completion_tokens: number;
         total_tokens: number;
-      }
+      };
+      compression?: {
+        input_tokens: number;
+        saved_tokens: number;
+        rate: number;
+      };
     };
 
-    return new SendResponse(data.choices, data.usage);
+    return new SendResponse(data.choices, data.usage, data.compression);
   }
 
   private async *_handleStreamingResponse(
@@ -288,6 +308,8 @@ export default class Edgee {
       if (input.tools) body.tools = input.tools;
       if (input.tool_choice) body.tool_choice = input.tool_choice;
       if (input.tags) body.tags = input.tags;
+      if (input.enable_compression !== undefined) body.enable_compression = input.enable_compression;
+      if (input.compression_rate !== undefined) body.compression_rate = input.compression_rate;
     }
 
     yield* this._handleStreamingResponse(
