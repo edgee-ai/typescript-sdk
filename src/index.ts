@@ -69,6 +69,11 @@ export class SendResponse {
     completion_tokens: number;
     total_tokens: number;
   };
+  compression?: {
+    input_tokens: number;
+    saved_tokens: number;
+    rate: number;
+  };
 
   constructor(
     choices: Choice[],
@@ -76,10 +81,16 @@ export class SendResponse {
       prompt_tokens: number;
       completion_tokens: number;
       total_tokens: number;
+    },
+    compression?: {
+      input_tokens: number;
+      saved_tokens: number;
+      rate: number;
     }
   ) {
     this.choices = choices;
     this.usage = usage;
+    this.compression = compression;
   }
 
   get text(): string | null {
@@ -213,10 +224,15 @@ export default class Edgee {
         prompt_tokens: number;
         completion_tokens: number;
         total_tokens: number;
-      }
+      };
+      compression?: {
+        input_tokens: number;
+        saved_tokens: number;
+        rate: number;
+      };
     };
 
-    return new SendResponse(data.choices, data.usage);
+    return new SendResponse(data.choices, data.usage, data.compression);
   }
 
   private async *_handleStreamingResponse(
