@@ -6,8 +6,9 @@
  * 2. Set a custom compression rate
  * 3. Access compression metrics from the response
  *
- * Note: Compression works on INPUT tokens, so this example includes a large
- * context document to demonstrate meaningful compression savings.
+ * IMPORTANT: Only USER messages are compressed. System messages are not compressed.
+ * This example includes a large context in the user message to demonstrate meaningful
+ * compression savings.
  */
 
 import Edgee from "edgee";
@@ -66,22 +67,23 @@ console.log("=".repeat(70));
 console.log();
 
 // Example: Request with compression enabled and large input
-console.log("Example: Large context with compression enabled");
+console.log("Example: Large user message with compression enabled");
 console.log("-".repeat(70));
 console.log(`Input context length: ${LARGE_CONTEXT.length} characters`);
 console.log();
 
+// NOTE: Only USER messages are compressed
+// Put the large context in the user message to demonstrate compression
+const userMessage = `Here is some context about AI:
+
+${LARGE_CONTEXT}
+
+Based on this context, summarize the key milestones in AI development in 3 bullet points.`;
+
 const response = await edgee.send({
   model: "gpt-4o",
   input: {
-    messages: [
-      { role: "system", content: LARGE_CONTEXT },
-      {
-        role: "user",
-        content:
-          "Based on the context above, summarize the key milestones in AI development in 3 bullet points.",
-      },
-    ],
+    messages: [{ role: "user", content: userMessage }],
     enable_compression: true,
     compression_rate: 0.5,
   },
