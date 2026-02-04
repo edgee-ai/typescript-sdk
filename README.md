@@ -1,6 +1,6 @@
 # Edgee TypeScript SDK
 
-Lightweight, type-safe TypeScript SDK for the [Edgee AI Gateway](https://www.edgee.cloud).
+Lightweight, type-safe TypeScript SDK for the [Edgee AI Gateway](https://www.edgee.ai).
 
 [![npm version](https://img.shields.io/npm/v/edgee.svg)](https://www.npmjs.com/package/edgee)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
@@ -73,13 +73,13 @@ for await (const chunk of edgee.stream('gpt-4o', 'Tell me a story')) {
 
 For complete documentation, examples, and API reference, visit:
 
-**👉 [Official TypeScript SDK Documentation](https://www.edgee.cloud/docs/sdk/typescript)**
+**👉 [Official TypeScript SDK Documentation](https://www.edgee.ai/docs/sdk/typescript)**
 
 The documentation includes:
-- [Configuration guide](https://www.edgee.cloud/docs/sdk/typescript/configuration) - Multiple ways to configure the SDK
-- [Send method](https://www.edgee.cloud/docs/sdk/typescript/send) - Complete guide to non-streaming requests
-- [Stream method](https://www.edgee.cloud/docs/sdk/typescript/stream) - Streaming responses guide
-- [Tools](https://www.edgee.cloud/docs/sdk/typescript/tools) - Function calling guide
+- [Configuration guide](https://www.edgee.ai/docs/sdk/typescript/configuration) - Multiple ways to configure the SDK
+- [Send method](https://www.edgee.ai/docs/sdk/typescript/send) - Complete guide to non-streaming requests
+- [Stream method](https://www.edgee.ai/docs/sdk/typescript/stream) - Streaming responses guide
+- [Tools](https://www.edgee.ai/docs/sdk/typescript/tools) - Function calling guide
 
 ## License
 

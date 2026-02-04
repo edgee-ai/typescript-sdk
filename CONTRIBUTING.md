@@ -1,15 +1,15 @@
 # Edgee Contributor Guidelines
 
-Welcome! This project is created by the team at [Edgee](https://www.edgee.cloud). 
+Welcome! This project is created by the team at [Edgee](https://www.edgee.ai). 
 We're glad you're interested in contributing! We welcome contributions from people of all backgrounds 
 who are interested in making great software with us.
 
 At Edgee, we aspire to empower everyone to create interactive experiences. To do this, 
 we're exploring and pushing the boundaries of new technologies, and sharing our learnings with the open source community.
 
-If you have ideas for collaboration, email us at opensource@edgee.cloud or join our [Discord](https://www.edgee.cloud/discord)!
+If you have ideas for collaboration, email us at opensource@edgee.ai or join our [Discord](https://www.edgee.ai/discord)!
 
-We're also hiring full-time engineers to work with us everywhere! Check out our current job postings [here](https://github.com/edgee-cloud/careers/issues).
+We're also hiring full-time engineers to work with us everywhere! Check out our current job postings [here](https://github.com/edgee-ai/careers/issues).
 
 ## Issues
 
