@@ -42,6 +42,17 @@ const response = await edgee.send({
 console.log(response.text);           // Text content
 console.log(response.finishReason);   // Finish reason
 console.log(response.toolCalls);      // Tool calls (if any)
+
+// Access usage and compression info
+if (response.usage) {
+  console.log(`Tokens used: ${response.usage.total_tokens}`);
+}
+
+if (response.compression) {
+  console.log(`Input tokens: ${response.compression.input_tokens}`);
+  console.log(`Saved tokens: ${response.compression.saved_tokens}`);
+  console.log(`Compression rate: ${response.compression.rate}`);
+}
 ```
 
 ## Stream Method
@@ -67,6 +78,7 @@ for await (const chunk of edgee.stream('gpt-4o', 'Tell me a story')) {
 - ✅ **Streaming** - Real-time response streaming
 - ✅ **Tool calling** - Full support for function calling
 - ✅ **Flexible input** - Accept strings or structured objects
+- ✅ **Compression info** - Access token compression metrics in responses
 - ✅ **Zero dependencies** - Lightweight and fast
 
 ## Documentation
