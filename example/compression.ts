@@ -81,7 +81,7 @@ ${LARGE_CONTEXT}
 Based on this context, summarize the key milestones in AI development in 3 bullet points.`;
 
 const response = await edgee.send({
-  model: "gpt-4o",
+  model: "gpt-5.2",
   input: {
     messages: [{ role: "user", content: userMessage }],
     enable_compression: true,
