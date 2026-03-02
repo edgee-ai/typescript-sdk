@@ -20,7 +20,7 @@ const edgee = new Edgee("your-api-key");
 
 // Send a simple request
 const response = await edgee.send({
-  model: 'gpt-4o',
+  model: 'gpt-5.2',
   input: 'What is the capital of France?',
 });
 
@@ -34,7 +34,7 @@ The `send()` method makes non-streaming chat completion requests:
 
 ```typescript
 const response = await edgee.send({
-  model: 'gpt-4o',
+  model: 'gpt-5.2',
   input: 'Hello, world!',
 });
 
@@ -60,7 +60,7 @@ if (response.compression) {
 The `stream()` method enables real-time streaming responses:
 
 ```typescript
-for await (const chunk of edgee.stream('gpt-4o', 'Tell me a story')) {
+for await (const chunk of edgee.stream('gpt-5.2', 'Tell me a story')) {
   if (chunk.text) {
     process.stdout.write(chunk.text);
   }

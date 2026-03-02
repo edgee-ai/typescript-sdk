@@ -5,7 +5,7 @@ const edgee = new Edgee(process.env.EDGEE_API_KEY || "test-key");
 // Test 1: Simple string input
 console.log("Test 1: Simple string input");
 const response1 = await edgee.send({
-  model: "gpt-4o",
+  model: "gpt-5.2",
   input: "What is the capital of France?",
 });
 console.log("Content:", response1.choices[0].message.content);
@@ -15,7 +15,7 @@ console.log();
 // Test 2: Full input object with messages
 console.log("Test 2: Full input object with messages");
 const response2 = await edgee.send({
-  model: "gpt-4o",
+  model: "gpt-5.2",
   input: {
     messages: [
       { role: "system", content: "You are a helpful assistant." },
@@ -29,7 +29,7 @@ console.log();
 // Test 3: With tools
 console.log("Test 3: With tools");
 const response3 = await edgee.send({
-  model: "gpt-4o",
+  model: "gpt-5.2",
   input: {
     messages: [{ role: "user", content: "What is the weather in Paris?" }],
     tools: [
