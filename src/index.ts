@@ -43,10 +43,13 @@ export interface InputObject {
   tools?: Tool[];
   tool_choice?: ToolChoice;
   tags?: string[];
-  enable_compression?: boolean; // Enable token compression (gateway-internal, not sent to providers)
+  compression_model?: "agentic" | "claude" | "opencode" | "cursor" | "customer"; // Compression model (gateway-internal, not sent to providers)
   compression_rate?: number; // Compression rate 0.0-1.0 (gateway-internal, not sent to providers)
-  enable_claude_compression?: boolean; // Enable Claude-specific tool compression (gateway-internal, not sent to providers)
-  enable_opencode_compression?: boolean; // Enable OpenCode-specific tool compression (gateway-internal, not sent to providers)
+  compression_semantic_preservation_threshold?: number; // Semantic preservation threshold 0-100 (gateway-internal, not sent to providers)
+  /** @deprecated Use compression_model instead */
+  enable_compression?: boolean;
+  /** @deprecated Use compression_model instead */
+  compression_technique?: string;
 }
 
 export interface SendOptions {
@@ -204,10 +207,11 @@ export default class Edgee {
       if (input.tools) body.tools = input.tools;
       if (input.tool_choice) body.tool_choice = input.tool_choice;
       if (input.tags) body.tags = input.tags;
-      if (input.enable_compression !== undefined) body.enable_compression = input.enable_compression;
+      if (input.compression_model) body.compression_model = input.compression_model;
       if (input.compression_rate !== undefined) body.compression_rate = input.compression_rate;
-      if (input.enable_claude_compression !== undefined) body.enable_claude_compression = input.enable_claude_compression;
-      if (input.enable_opencode_compression !== undefined) body.enable_opencode_compression = input.enable_opencode_compression;
+      if (input.compression_semantic_preservation_threshold !== undefined) body.compression_semantic_preservation_threshold = input.compression_semantic_preservation_threshold;
+      if (input.enable_compression !== undefined) body.enable_compression = input.enable_compression;
+      if (input.compression_technique) body.compression_technique = input.compression_technique;
     }
 
     const res = await fetch(`${this.baseUrl}/v1/chat/completions`, {
@@ -315,10 +319,11 @@ export default class Edgee {
       if (input.tools) body.tools = input.tools;
       if (input.tool_choice) body.tool_choice = input.tool_choice;
       if (input.tags) body.tags = input.tags;
-      if (input.enable_compression !== undefined) body.enable_compression = input.enable_compression;
+      if (input.compression_model) body.compression_model = input.compression_model;
       if (input.compression_rate !== undefined) body.compression_rate = input.compression_rate;
-      if (input.enable_claude_compression !== undefined) body.enable_claude_compression = input.enable_claude_compression;
-      if (input.enable_opencode_compression !== undefined) body.enable_opencode_compression = input.enable_opencode_compression;
+      if (input.compression_semantic_preservation_threshold !== undefined) body.compression_semantic_preservation_threshold = input.compression_semantic_preservation_threshold;
+      if (input.enable_compression !== undefined) body.enable_compression = input.enable_compression;
+      if (input.compression_technique) body.compression_technique = input.compression_technique;
     }
 
     yield* this._handleStreamingResponse(
