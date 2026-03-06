@@ -44,8 +44,10 @@ export interface InputObject {
   tool_choice?: ToolChoice;
   tags?: string[];
   compression_model?: "agentic" | "claude" | "opencode" | "cursor" | "customer"; // Compression model (gateway-internal, not sent to providers)
-  compression_rate?: number; // Compression rate 0.0-1.0 (gateway-internal, not sent to providers)
-  compression_semantic_preservation_threshold?: number; // Semantic preservation threshold 0-100 (gateway-internal, not sent to providers)
+  compression_configuration?: { // Configuration for the compression model (only relevant for agentic)
+    rate?: number; // Compression rate 0.0-1.0
+    semantic_preservation_threshold?: number; // Semantic preservation threshold 0-100
+  };
 }
 
 export interface SendOptions {
@@ -204,8 +206,7 @@ export default class Edgee {
       if (input.tool_choice) body.tool_choice = input.tool_choice;
       if (input.tags) body.tags = input.tags;
       if (input.compression_model) body.compression_model = input.compression_model;
-      if (input.compression_rate !== undefined) body.compression_rate = input.compression_rate;
-      if (input.compression_semantic_preservation_threshold !== undefined) body.compression_semantic_preservation_threshold = input.compression_semantic_preservation_threshold;
+      if (input.compression_configuration) body.compression_configuration = input.compression_configuration;
     }
 
     const res = await fetch(`${this.baseUrl}/v1/chat/completions`, {
@@ -314,8 +315,7 @@ export default class Edgee {
       if (input.tool_choice) body.tool_choice = input.tool_choice;
       if (input.tags) body.tags = input.tags;
       if (input.compression_model) body.compression_model = input.compression_model;
-      if (input.compression_rate !== undefined) body.compression_rate = input.compression_rate;
-      if (input.compression_semantic_preservation_threshold !== undefined) body.compression_semantic_preservation_threshold = input.compression_semantic_preservation_threshold;
+      if (input.compression_configuration) body.compression_configuration = input.compression_configuration;
     }
 
     yield* this._handleStreamingResponse(
