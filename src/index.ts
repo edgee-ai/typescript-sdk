@@ -70,9 +70,10 @@ export class SendResponse {
     total_tokens: number;
   };
   compression?: {
-    input_tokens: number;
     saved_tokens: number;
-    rate: number;
+    cost_savings: number;
+    reduction: number;
+    time_ms: number;
   };
 
   constructor(
@@ -83,9 +84,10 @@ export class SendResponse {
       total_tokens: number;
     },
     compression?: {
-      input_tokens: number;
       saved_tokens: number;
-      rate: number;
+      cost_savings: number;
+      reduction: number;
+      time_ms: number;
     }
   ) {
     this.choices = choices;
@@ -226,9 +228,10 @@ export default class Edgee {
         total_tokens: number;
       };
       compression?: {
-        input_tokens: number;
         saved_tokens: number;
-        rate: number;
+        cost_savings: number;
+        reduction: number;
+        time_ms: number;
       };
     };
 

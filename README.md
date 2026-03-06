@@ -20,7 +20,11 @@ const edgee = new Edgee("your-api-key");
 
 // Send a simple request
 const response = await edgee.send({
+<<<<<<< HEAD
   model: 'gpt-5.2',
+=======
+  model: 'anthropic/claude-haiku-4-5',
+>>>>>>> ecec4c8 (feat: update compression response to new API format)
   input: 'What is the capital of France?',
 });
 
@@ -34,7 +38,7 @@ The `send()` method makes non-streaming chat completion requests:
 
 ```typescript
 const response = await edgee.send({
-  model: 'gpt-5.2',
+  model: 'anthropic/claude-haiku-4-5',
   input: 'Hello, world!',
 });
 
@@ -49,9 +53,10 @@ if (response.usage) {
 }
 
 if (response.compression) {
-  console.log(`Input tokens: ${response.compression.input_tokens}`);
   console.log(`Saved tokens: ${response.compression.saved_tokens}`);
-  console.log(`Compression rate: ${response.compression.rate}`);
+  console.log(`Reduction: ${response.compression.reduction}%`);
+  console.log(`Cost savings: $${(response.compression.cost_savings / 1_000_000).toFixed(3)}`);
+  console.log(`Time: ${response.compression.time_ms} ms`);
 }
 ```
 
@@ -60,7 +65,7 @@ if (response.compression) {
 The `stream()` method enables real-time streaming responses:
 
 ```typescript
-for await (const chunk of edgee.stream('gpt-5.2', 'Tell me a story')) {
+for await (const chunk of edgee.stream('anthropic/claude-haiku-4-5', 'Tell me a story')) {
   if (chunk.text) {
     process.stdout.write(chunk.text);
   }

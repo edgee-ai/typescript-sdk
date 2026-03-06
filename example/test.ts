@@ -5,7 +5,7 @@ const edgee = new Edgee(process.env.EDGEE_API_KEY || "test-key");
 // Test 1: Simple string input
 console.log("Test 1: Simple string input");
 const response1 = await edgee.send({
-  model: "gpt-5.2",
+  model: "anthropic/claude-haiku-4-5",
   input: "What is the capital of France?",
 });
 console.log("Content:", response1.choices[0].message.content);
@@ -15,7 +15,7 @@ console.log();
 // Test 2: Full input object with messages
 console.log("Test 2: Full input object with messages");
 const response2 = await edgee.send({
-  model: "gpt-5.2",
+  model: "anthropic/claude-haiku-4-5",
   input: {
     messages: [
       { role: "system", content: "You are a helpful assistant." },
@@ -29,7 +29,7 @@ console.log();
 // Test 3: With tools
 console.log("Test 3: With tools");
 const response3 = await edgee.send({
-  model: "gpt-5.2",
+  model: "anthropic/claude-haiku-4-5",
   input: {
     messages: [{ role: "user", content: "What is the weather in Paris?" }],
     tools: [
@@ -56,3 +56,16 @@ console.log(
   "Tool calls:",
   JSON.stringify(response3.choices[0].message.tool_calls, null, 2)
 );
+console.log();
+
+// Test 4: Streaming
+console.log("Test 4: Streaming");
+for await (const chunk of edgee.stream(
+  "anthropic/claude-haiku-4-5",
+  "What is Typescript?"
+)) {
+  if (chunk.text) {
+    process.stdout.write(chunk.text);
+  }
+}
+console.log("\n");
