@@ -81,7 +81,7 @@ ${LARGE_CONTEXT}
 Based on this context, summarize the key milestones in AI development in 3 bullet points.`;
 
 const response = await edgee.send({
-  model: "gpt-5.2",
+  model: "anthropic/claude-haiku-4-5",
   input: {
     messages: [{ role: "user", content: userMessage }],
     enable_compression: true,
@@ -104,26 +104,25 @@ if (response.usage) {
 // Display compression information
 if (response.compression) {
   console.log("Compression Metrics:");
-  console.log(`  Input tokens:  ${response.compression.input_tokens}`);
   console.log(`  Saved tokens:  ${response.compression.saved_tokens}`);
+  console.log(`  Reduction:     ${response.compression.reduction}%`);
   console.log(
-    `  Compression rate: ${(response.compression.rate * 100).toFixed(2)}%`
+    `  Cost savings:  $${(response.compression.cost_savings / 1_000_000).toFixed(3)}`
   );
-  const savingsPct =
-    response.compression.input_tokens > 0
-      ? (response.compression.saved_tokens /
-          response.compression.input_tokens) *
-        100
-      : 0;
-  console.log(`  Savings: ${savingsPct.toFixed(1)}% of input tokens saved!`);
-  console.log();
-  console.log(`  💡 Without compression, this request would have used`);
-  console.log(`     ${response.compression.input_tokens} input tokens.`);
-  console.log(
-    `     With compression, only ${
-      response.compression.input_tokens - response.compression.saved_tokens
-    } tokens were processed!`
-  );
+  console.log(`  Time:          ${response.compression.time_ms} ms`);
+  if (response.compression.reduction > 0) {
+    const originalTokens =
+      Math.floor(
+        (response.compression.saved_tokens * 100) / response.compression.reduction
+      );
+    const tokensAfter = originalTokens - response.compression.saved_tokens;
+    console.log();
+    console.log(`  💡 Without compression, this request would have used`);
+    console.log(`     ${originalTokens} input tokens.`);
+    console.log(
+      `     With compression, only ${tokensAfter} tokens were processed!`
+    );
+  }
 } else {
   console.log("No compression data available in response.");
   console.log(

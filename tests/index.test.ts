@@ -509,9 +509,10 @@ describe('Edgee', () => {
           total_tokens: 150,
         },
         compression: {
-          input_tokens: 100,
           saved_tokens: 42,
-          rate: 0.6102003642987249,
+          cost_savings: 27000,
+          reduction: 48,
+          time_ms: 150,
         },
       };
 
@@ -526,9 +527,10 @@ describe('Edgee', () => {
       });
 
       expect(result.compression).toBeDefined();
-      expect(result.compression?.input_tokens).toBe(100);
       expect(result.compression?.saved_tokens).toBe(42);
-      expect(result.compression?.rate).toBe(0.6102003642987249);
+      expect(result.compression?.cost_savings).toBe(27000);
+      expect(result.compression?.reduction).toBe(48);
+      expect(result.compression?.time_ms).toBe(150);
     });
 
     it('should handle response without compression field', async () => {

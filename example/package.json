@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "test": "npx tsx test.ts"
+    "test": "npx tsx test.ts",
+    "test:compression": "npx tsx compression.ts"
   },
   "dependencies": {
     "edgee": "file:.."
