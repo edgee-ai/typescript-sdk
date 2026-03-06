@@ -20,11 +20,7 @@ const edgee = new Edgee("your-api-key");
 
 // Send a simple request
 const response = await edgee.send({
-<<<<<<< HEAD
-  model: 'gpt-5.2',
-=======
   model: 'anthropic/claude-haiku-4-5',
->>>>>>> ecec4c8 (feat: update compression response to new API format)
   input: 'What is the capital of France?',
 });
 
