@@ -45,6 +45,8 @@ export interface InputObject {
   tags?: string[];
   enable_compression?: boolean; // Enable token compression (gateway-internal, not sent to providers)
   compression_rate?: number; // Compression rate 0.0-1.0 (gateway-internal, not sent to providers)
+  enable_claude_compression?: boolean; // Enable Claude-specific tool compression (gateway-internal, not sent to providers)
+  enable_opencode_compression?: boolean; // Enable OpenCode-specific tool compression (gateway-internal, not sent to providers)
 }
 
 export interface SendOptions {
@@ -204,6 +206,8 @@ export default class Edgee {
       if (input.tags) body.tags = input.tags;
       if (input.enable_compression !== undefined) body.enable_compression = input.enable_compression;
       if (input.compression_rate !== undefined) body.compression_rate = input.compression_rate;
+      if (input.enable_claude_compression !== undefined) body.enable_claude_compression = input.enable_claude_compression;
+      if (input.enable_opencode_compression !== undefined) body.enable_opencode_compression = input.enable_opencode_compression;
     }
 
     const res = await fetch(`${this.baseUrl}/v1/chat/completions`, {
@@ -313,6 +317,8 @@ export default class Edgee {
       if (input.tags) body.tags = input.tags;
       if (input.enable_compression !== undefined) body.enable_compression = input.enable_compression;
       if (input.compression_rate !== undefined) body.compression_rate = input.compression_rate;
+      if (input.enable_claude_compression !== undefined) body.enable_claude_compression = input.enable_claude_compression;
+      if (input.enable_opencode_compression !== undefined) body.enable_opencode_compression = input.enable_opencode_compression;
     }
 
     yield* this._handleStreamingResponse(
