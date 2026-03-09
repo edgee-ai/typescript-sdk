@@ -84,8 +84,10 @@ const response = await edgee.send({
   model: "anthropic/claude-haiku-4-5",
   input: {
     messages: [{ role: "user", content: userMessage }],
-    enable_compression: true,
-    compression_rate: 0.5,
+    compression_model: "agentic",
+    compression_configuration: {
+      rate: 0.5,
+    },
   },
 });
 
