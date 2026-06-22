@@ -183,7 +183,7 @@ export default class Edgee {
       throw new Error("EDGEE_API_KEY is not set");
     }
 
-    this.baseUrl = baseUrl || process.env.EDGEE_BASE_URL || "https://api.edgee.ai";
+    this.baseUrl = baseUrl || process.env.EDGEE_BASE_URL || "https://edgee.io";
   }
 
   async send(options: SendOptions): Promise<SendResponse> {
