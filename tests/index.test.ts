@@ -120,7 +120,7 @@ describe('Edgee', () => {
 
       expect(mockFetch).toHaveBeenCalledOnce();
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.edgee.ai/v1/chat/completions',
+        'https://edgee.io/v1/chat/completions',
         {
           method: 'POST',
           headers: {
@@ -172,7 +172,7 @@ describe('Edgee', () => {
 
       expect(mockFetch).toHaveBeenCalledOnce();
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.edgee.ai/v1/chat/completions',
+        'https://edgee.io/v1/chat/completions',
         {
           method: 'POST',
           headers: {
@@ -452,7 +452,7 @@ describe('Edgee', () => {
       });
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.edgee.ai/v1/chat/completions',
+        'https://edgee.io/v1/chat/completions',
         expect.any(Object)
       );
     });
