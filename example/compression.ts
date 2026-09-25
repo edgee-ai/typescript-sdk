@@ -2,89 +2,71 @@
  * Example: Token compression with Edgee Gateway SDK
  *
  * This example demonstrates how to:
- * 1. Enable compression for a request with a large input context
- * 2. Set a custom compression rate
- * 3. Access compression metrics from the response
+ * 1. Turn tool-result trimming on for a single request
+ * 2. Access compression metrics from the response
  *
- * IMPORTANT: Only USER messages are compressed. System messages are not compressed.
- * This example includes a large context in the user message to demonstrate meaningful
- * compression savings.
+ * Tool-result trimming shortens the output of tool calls (here a long `ls -la`
+ * listing) before it reaches the model. The per-request toggles
+ * (`tool_result_trimming`, `tool_surface_reduction`, `output_brevity`) override
+ * the API key settings for this request only; leave one out to keep the key's
+ * setting.
  */
 
 import Edgee from "edgee";
 
 const edgee = new Edgee(process.env.EDGEE_API_KEY);
 
-// Large context document to demonstrate input compression
-const LARGE_CONTEXT = `
-The History and Impact of Artificial Intelligence
-
-Artificial intelligence (AI) has evolved from a theoretical concept to a 
-transformative technology that influences nearly every aspect of modern life. 
-The field began in earnest in the 1950s when pioneers like Alan Turing and 
-John McCarthy laid the groundwork for machine intelligence.
-
-Early developments focused on symbolic reasoning and expert systems. These 
-rule-based approaches dominated the field through the 1970s and 1980s, with 
-systems like MYCIN demonstrating practical applications in medical diagnosis. 
-However, these early systems were limited by their inability to learn from data 
-and adapt to new situations.
-
-The resurgence of neural networks in the 1980s and 1990s, particularly with 
-backpropagation algorithms, opened new possibilities. Yet it wasn't until the 
-2010s, with the advent of deep learning and the availability of massive datasets 
-and computational power, that AI truly began to revolutionize industries.
-
-Modern AI applications span numerous domains:
-- Natural language processing enables machines to understand and generate human language
-- Computer vision allows machines to interpret visual information from the world
-- Robotics combines AI with mechanical systems for autonomous operation
-- Healthcare uses AI for diagnosis, drug discovery, and personalized treatment
-- Finance leverages AI for fraud detection, algorithmic trading, and risk assessment
-- Transportation is being transformed by autonomous vehicles and traffic optimization
-
-The development of large language models like GPT, BERT, and others has 
-particularly accelerated progress in natural language understanding and generation. 
-These models, trained on vast amounts of text data, can perform a wide range of 
-language tasks with remarkable proficiency.
-
-Despite remarkable progress, significant challenges remain. Issues of bias, 
-interpretability, safety, and ethical considerations continue to be areas of 
-active research and debate. The AI community is working to ensure that these 
-powerful technologies are developed and deployed responsibly, with consideration 
-for their societal impact.
-
-Looking forward, AI is expected to continue advancing rapidly, with potential 
-breakthroughs in areas like artificial general intelligence, quantum machine 
-learning, and brain-computer interfaces. The integration of AI into daily life 
-will likely deepen, raising important questions about human-AI collaboration, 
-workforce transformation, and the future of human cognition itself.
-`;
+// A long directory listing, the kind of tool output coding agents send back.
+const LS_OUTPUT =
+  "total 800\n" +
+  Array.from(
+    { length: 200 },
+    (_, i) =>
+      `-rw-r--r--  1 user  staff  ${1000 + i} Jan  1 12:00 src/components/module_${String(i).padStart(3, "0")}.tsx`
+  ).join("\n");
 
 console.log("=".repeat(70));
 console.log("Edgee Token Compression Example");
 console.log("=".repeat(70));
 console.log();
 
-// Example: Request with compression enabled and large input
-console.log("Example: Large user message with compression enabled");
+console.log("Example: Large tool result with tool-result trimming turned on");
 console.log("-".repeat(70));
-console.log(`Input context length: ${LARGE_CONTEXT.length} characters`);
+console.log(`Tool output length: ${LS_OUTPUT.length} characters`);
 console.log();
-
-// NOTE: Only USER messages are compressed
-// Put the large context in the user message to demonstrate compression
-const userMessage = `Here is some context about AI:
-
-${LARGE_CONTEXT}
-
-Based on this context, summarize the key milestones in AI development in 3 bullet points.`;
 
 const response = await edgee.send({
   model: "anthropic/claude-haiku-4-5",
   input: {
-    messages: [{ role: "user", content: userMessage }],
-    compression_model: "claude",
+    messages: [
+      { role: "user", content: "How many files are in src/components?" },
+      {
+        role: "assistant",
+        tool_calls: [
+          {
+            id: "call_1",
+            type: "function",
+            function: { name: "Bash", arguments: '{"command":"ls -la src/components"}' },
+          },
+        ],
+      },
+      { role: "tool", tool_call_id: "call_1", content: LS_OUTPUT },
+    ],
+    tools: [
+      {
+        type: "function",
+        function: {
+          name: "Bash",
+          description: "Run a shell command and return its output.",
+          parameters: {
+            type: "object",
+            properties: { command: { type: "string" } },
+            required: ["command"],
+          },
+        },
+      },
+    ],
+    tool_result_trimming: true,
   },
 });
 
@@ -125,11 +107,10 @@ if (response.compression) {
 } else {
   console.log("No compression data available in response.");
   console.log(
-    "Note: Compression data is only returned when compression is enabled"
+    "Note: Compression data is only returned when trimming actually shortened"
   );
-  console.log("      and supported by your API key configuration.");
+  console.log("      a tool result.");
 }
 
 console.log();
 console.log("=".repeat(70));
-

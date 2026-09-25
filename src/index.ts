@@ -43,7 +43,37 @@ export interface InputObject {
   tools?: Tool[];
   tool_choice?: ToolChoice;
   tags?: string[];
-  compression_model?: "claude" | "opencode" | "cursor" | "customer"; // Compression model (gateway-internal, not sent to providers)
+  /**
+   * @deprecated Legacy switch: any value turns tool-result trimming on for this
+   * request. Use `tool_result_trimming` instead.
+   */
+  compression_model?: "claude" | "opencode" | "cursor" | "customer";
+  /** Turn tool-result trimming on or off for this request. Omit to keep the API key setting. */
+  tool_result_trimming?: boolean;
+  /**
+   * Turn MCP tool surface reduction on or off for this request. Omit to keep the
+   * API key setting. The threshold still comes from the API key.
+   */
+  tool_surface_reduction?: boolean;
+  /** Turn output brevity on or off for this request. Omit to keep the API key setting. */
+  output_brevity?: boolean;
+}
+
+const COMPRESSION_HEADERS = {
+  tool_result_trimming: "X-Edgee-Compression-Tool-Result-Trimming",
+  tool_surface_reduction: "X-Edgee-Compression-Tool-Surface-Reduction",
+  output_brevity: "X-Edgee-Compression-Brevity",
+} as const;
+
+/** Per-request compression overrides, sent only for the toggles the caller set. */
+function compressionHeaders(input: string | InputObject): Record<string, string> {
+  const headers: Record<string, string> = {};
+  if (typeof input === "string") return headers;
+  for (const [field, header] of Object.entries(COMPRESSION_HEADERS)) {
+    const value = input[field as keyof typeof COMPRESSION_HEADERS];
+    if (typeof value === "boolean") headers[header] = String(value);
+  }
+  return headers;
 }
 
 export interface SendOptions {
@@ -209,6 +239,7 @@ export default class Edgee {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${this.apiKey}`,
+        ...compressionHeaders(input),
       },
       body: JSON.stringify(body),
     });
@@ -238,13 +269,15 @@ export default class Edgee {
 
   private async *_handleStreamingResponse(
     url: string,
-    body: Record<string, unknown>
+    body: Record<string, unknown>,
+    extraHeaders: Record<string, string> = {}
   ): AsyncGenerator<StreamChunk> {
     const res = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${this.apiKey}`,
+        ...extraHeaders,
       },
       body: JSON.stringify(body),
     });
@@ -314,7 +347,8 @@ export default class Edgee {
 
     yield* this._handleStreamingResponse(
       `${this.baseUrl}/v1/chat/completions`,
-      body
+      body,
+      compressionHeaders(input)
     );
   }
 }

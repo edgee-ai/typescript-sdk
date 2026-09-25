@@ -589,6 +589,93 @@ describe('Edgee', () => {
         })
       ).rejects.toThrow('API error 500: Internal Server Error');
     });
+
+    describe('compression overrides', () => {
+      const okResponse = () => ({
+        ok: true,
+        json: async () => ({
+          choices: [
+            { index: 0, message: { role: 'assistant', content: 'ok' }, finish_reason: 'stop' },
+          ],
+        }),
+      });
+      const sentHeaders = () =>
+        (mockFetch.mock.calls[0][1] as { headers: Record<string, string> }).headers;
+      const sentBody = () =>
+        JSON.parse((mockFetch.mock.calls[0][1] as { body: string }).body) as Record<string, unknown>;
+
+      it('should send each set toggle as its header, never in the body', async () => {
+        mockFetch.mockResolvedValueOnce(okResponse());
+
+        await client.send({
+          model: 'gpt-4',
+          input: {
+            messages: [{ role: 'user', content: 'Hello' }],
+            tool_result_trimming: true,
+            tool_surface_reduction: false,
+            output_brevity: true,
+          },
+        });
+
+        expect(sentHeaders()).toMatchObject({
+          'X-Edgee-Compression-Tool-Result-Trimming': 'true',
+          'X-Edgee-Compression-Tool-Surface-Reduction': 'false',
+          'X-Edgee-Compression-Brevity': 'true',
+        });
+        const body = sentBody();
+        expect(body).not.toHaveProperty('tool_result_trimming');
+        expect(body).not.toHaveProperty('tool_surface_reduction');
+        expect(body).not.toHaveProperty('output_brevity');
+      });
+
+      it('should omit the headers for toggles left unset', async () => {
+        mockFetch.mockResolvedValueOnce(okResponse());
+
+        await client.send({
+          model: 'gpt-4',
+          input: { messages: [{ role: 'user', content: 'Hello' }], tool_result_trimming: false },
+        });
+
+        const headers = sentHeaders();
+        expect(headers['X-Edgee-Compression-Tool-Result-Trimming']).toBe('false');
+        expect(headers).not.toHaveProperty('X-Edgee-Compression-Tool-Surface-Reduction');
+        expect(headers).not.toHaveProperty('X-Edgee-Compression-Brevity');
+      });
+
+      it('should send no compression headers for string input', async () => {
+        mockFetch.mockResolvedValueOnce(okResponse());
+
+        await client.send({ model: 'gpt-4', input: 'Hello' });
+
+        expect(Object.keys(sentHeaders())).toEqual(['Content-Type', 'Authorization']);
+      });
+
+      it('should send the toggles on streaming requests', async () => {
+        const encoder = new TextEncoder();
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          body: new ReadableStream({
+            start(controller) {
+              controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+              controller.close();
+            },
+          }),
+        });
+
+        const chunks: StreamChunk[] = [];
+        for await (const chunk of client.stream('gpt-4', {
+          messages: [{ role: 'user', content: 'Hello' }],
+          tool_surface_reduction: true,
+        })) {
+          chunks.push(chunk);
+        }
+        expect(chunks).toHaveLength(0);
+
+        const headers = sentHeaders();
+        expect(headers['X-Edgee-Compression-Tool-Surface-Reduction']).toBe('true');
+        expect(headers).not.toHaveProperty('X-Edgee-Compression-Tool-Result-Trimming');
+      });
+    });
   });
 
   describe('convenience properties', () => {
