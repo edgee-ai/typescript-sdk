@@ -43,11 +43,6 @@ export interface InputObject {
   tools?: Tool[];
   tool_choice?: ToolChoice;
   tags?: string[];
-  /**
-   * @deprecated Legacy switch: any value turns tool-result trimming on for this
-   * request. Use `tool_result_trimming` instead.
-   */
-  compression_model?: "claude" | "opencode" | "cursor" | "customer";
   /** Turn tool-result trimming on or off for this request. Omit to keep the API key setting. */
   tool_result_trimming?: boolean;
   /**
@@ -231,7 +226,6 @@ export default class Edgee {
       if (input.tools) body.tools = input.tools;
       if (input.tool_choice) body.tool_choice = input.tool_choice;
       if (input.tags) body.tags = input.tags;
-      if (input.compression_model) body.compression_model = input.compression_model;
     }
 
     const res = await fetch(`${this.baseUrl}/v1/chat/completions`, {
@@ -342,7 +336,6 @@ export default class Edgee {
       if (input.tools) body.tools = input.tools;
       if (input.tool_choice) body.tool_choice = input.tool_choice;
       if (input.tags) body.tags = input.tags;
-      if (input.compression_model) body.compression_model = input.compression_model;
     }
 
     yield* this._handleStreamingResponse(
